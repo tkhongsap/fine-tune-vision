@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 from PIL import Image
 from io import BytesIO
+import base64
+from system_prompt import get_system_prompt
 
 def load_dataset(dataset_path):
     """
@@ -151,6 +153,94 @@ def display_examples(df, num_examples=3, random_seed=42):
             
         print("-" * 50)
 
+def encode_image(image, quality=100):
+    """
+    Encode image to base64 string, ensuring it's in RGB format
+    
+    Args:
+        image: PIL Image object
+        quality: JPEG quality (1-100, 100 is highest quality)
+        
+    Returns:
+        Base64 encoded string of the image
+    """
+    if image.mode != 'RGB':
+        image = image.convert('RGB')  # Convert to RGB
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG", quality=quality) 
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+def format_for_vision_fine_tuning(df, images_dir="images", image_quality=95):
+    """
+    Format the dataset for vision fine-tuning in OpenAI's Chat Completions API format
+    
+    Args:
+        df: Pandas DataFrame containing the dataset with 'image', 'question', and 'answer' columns
+        images_dir: Directory containing the images
+        image_quality: JPEG quality for encoded images (1-100)
+        
+    Returns:
+        List of dictionaries formatted for OpenAI's Chat Completions API
+    """
+    formatted_data = []
+    
+    # Import system prompt from system_prompt.py
+    system_prompt = get_system_prompt()
+    
+    for _, row in df.iterrows():
+        image_data = row['image']
+        question = row['question']
+        answer = row['answer']
+        
+        # Construct image path
+        img_id = image_data['image_id']
+        img_url = image_data['image_url']
+        ext = os.path.splitext(img_url)[1]
+        if not ext:  # If no extension, default to .jpg
+            ext = '.jpg'
+        
+        image_path = f"{images_dir}/{img_id}{ext}"
+        
+        # Skip if image file doesn't exist
+        if not os.path.exists(image_path):
+            print(f"Warning: Image {image_path} does not exist, skipping example")
+            continue
+        
+        try:
+            # Load image with PIL and encode
+            image = Image.open(image_path)
+            encoded_image = encode_image(image, quality=image_quality)
+            
+            # Format in OpenAI's Chat Completions API format
+            formatted_example = {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": question},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{encoded_image}"}}
+                        ]
+                    },
+                    {
+                        "role": "assistant", 
+                        "content": answer
+                    }
+                ]
+            }
+            
+            formatted_data.append(formatted_example)
+            
+        except Exception as e:
+            print(f"Error processing image {image_path}: {e}")
+            continue
+    
+    print(f"Formatted {len(formatted_data)} examples for vision fine-tuning")
+    return formatted_data
+
 def main():
     # Set paths
     SCRIPT_DIR = Path(__file__).resolve().parent
@@ -192,8 +282,19 @@ def main():
 
     # Display examples
     display_examples(ds_train, num_examples=3)
-    # display_examples(ds_val, num_examples=3)
-    # display_examples(ds_test, num_examples=3)
+
+    # Format test data for vision fine-tuning
+    print("\nFormatting test data for vision fine-tuning...")
+    formatted_test_data = format_for_vision_fine_tuning(ds_test, image_quality=95)
+    
+    # Save formatted test data to a file for easier use with the OpenAI API
+    test_data_file = SCRIPT_DIR / 'test_data.jsonl'
+    print(f"Saving formatted test data to {test_data_file}")
+    with open(test_data_file, 'w') as f:
+        for item in formatted_test_data:
+            f.write(json.dumps(item) + '\n')
+    
+    print(f"Test data saved to {test_data_file}")
 
 if __name__ == "__main__":
     main()
