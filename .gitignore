@@ -8,12 +8,15 @@ __pycache__/
 .venv/
 venv/
 env/
+*.egg
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
 # Environment variables and secrets
 .env
+.env.*
+!.env.example
 
 # System files
 .DS_Store
@@ -22,12 +25,18 @@ Thumbs.db
 # VSCode and IDE settings
 .vscode/
 .idea/
+.cursor/
 
-# Data and image files (customize as needed)
+# Data and image files
 ocr-vqa/dataset.json
 ocr-vqa/processed_data/
+ocr-vqa/cached_datasets/
+ocr-vqa/images/
 img/
 images/
+*.csv
+*.json
+!requirements.json
 
 # Model checkpoints, logs, and outputs
 *.ckpt
@@ -35,7 +44,31 @@ images/
 *.pt
 *.h5
 *.log
+*.pkl
+model_outputs/
+checkpoints/
+runs/
+wandb/
+lightning_logs/
+outputs/
+
+# Temporary files
+tmp/
+temp/
+.cache/
+.huggingface/
 
 # Mac/Linux hidden files
 *.swp
 *.swo
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+*.cover
