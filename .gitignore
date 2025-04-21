@@ -1,0 +1,41 @@
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables and secrets
+.env
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VSCode and IDE settings
+.vscode/
+.idea/
+
+# Data and image files (customize as needed)
+ocr-vqa/dataset.json
+ocr-vqa/processed_data/
+img/
+images/
+
+# Model checkpoints, logs, and outputs
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.log
+
+# Mac/Linux hidden files
+*.swp
+*.swo
