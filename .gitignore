@@ -86,3 +86,7 @@ htmlcov/
 .coverage
 coverage.xml
 *.cover
+
+# Large JSONL files and blurred files
+*.jsonl
+blurred_files/
