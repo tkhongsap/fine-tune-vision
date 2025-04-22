@@ -90,3 +90,5 @@ coverage.xml
 # Large JSONL files and blurred files
 *.jsonl
 blurred_files/
+
+claim-img/
