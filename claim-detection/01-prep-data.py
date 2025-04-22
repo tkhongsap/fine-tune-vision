@@ -27,8 +27,8 @@ def build_df(img_dir: Path):
     return pd.DataFrame(records)
 
 # Using Path to handle relative paths correctly - going up one directory then to claim-img
-script_dir = Path(__file__).parent
-img_dir = script_dir.parent / "claim-img"
+script_dir = Path.cwd()  # Use current working directory in notebooks
+img_dir = script_dir / "claim-img"
 df = build_df(img_dir)
 
 # Debug print to see if we're getting data
@@ -71,6 +71,45 @@ if len(df) > 0:
     for label, count in test_label_counts.items():
         percentage = count/len(test_df)*100
         print(f"{label}: {count} images ({percentage:.1f}%)")
+
+    # --- Add filename and base64_uri columns ---
+    def get_mime_type(filename):
+        ext = filename.lower().split('.')[-1]
+        if ext in ["jpg", "jpeg"]:
+            return "image/jpeg"
+        elif ext == "png":
+            return "image/png"
+        else:
+            return "application/octet-stream"
+
+    def add_filename_and_base64(df):
+        df = df.copy()
+        df["filename"] = df["path"].apply(lambda p: Path(p).name)
+        base64_uris = []
+        for path in tqdm(df["path"], desc="Encoding images to base64"):
+            try:
+                with open(path, "rb") as f:
+                    img_bytes = f.read()
+                mime = get_mime_type(path)
+                b64 = base64.b64encode(img_bytes).decode("utf-8")
+                uri = f"data:{mime};base64,{b64}"
+                base64_uris.append(uri)
+            except Exception as e:
+                print(f"Error encoding {path}: {e}")
+                base64_uris.append("")
+        df["base64_uri"] = base64_uris
+        return df
+
+    train_df = add_filename_and_base64(train_df)
+    val_df = add_filename_and_base64(val_df)
+    test_df = add_filename_and_base64(test_df)
+
+    print("\nSample train row with new columns:")
+    print(train_df.iloc[0][["filename", "base64_uri"]])
+    print("\nSample val row with new columns:")
+    print(val_df.iloc[0][["filename", "base64_uri"]])
+    print("\nSample test row with new columns:")
+    print(test_df.iloc[0][["filename", "base64_uri"]])
 else:
     print("No images found. Check the directory path and structure.")
     print(f"Looking for images in: {img_dir}")
