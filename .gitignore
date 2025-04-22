@@ -30,7 +30,21 @@ Thumbs.db
 # Data and image files
 ocr-vqa/dataset.json
 ocr-vqa/processed_data/
-ocr-vqa/cached_datasets/
+# Ensure datasets in cached_datasets are excluded
+ocr-vqa/cached_datasets/**/*.dataset
+ocr-vqa/cached_datasets/**/*.cache
+ocr-vqa/cached_datasets/**/*.arrow
+ocr-vqa/cached_datasets/**/*.arrow_index
+ocr-vqa/cached_datasets/**/*.hf
+ocr-vqa/cached_datasets/**/*.bin
+ocr-vqa/cached_datasets/**/*.idx
+cached_datasets/**/*.dataset
+cached_datasets/**/*.cache
+cached_datasets/**/*.arrow
+cached_datasets/**/*.arrow_index
+cached_datasets/**/*.hf
+cached_datasets/**/*.bin
+cached_datasets/**/*.idx
 ocr-vqa/images/
 img/
 images/

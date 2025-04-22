@@ -16,9 +16,9 @@ from system_prompt import get_system_prompt
 
 from datasets import load_dataset
 
-# load dataset
-ds = load_dataset("howard-hou/OCR-VQA")
-
+# load dataset from local cache
+cache_dir = os.path.join('cached_datasets')
+ds = load_dataset("howard-hou/OCR-VQA", cache_dir=cache_dir)
 
 # sample 150 training examples, 50 validation examples and 100 test examples
 ds_train = ds['train'].shuffle(seed=42).select(range(150))
@@ -54,3 +54,7 @@ ds_test = ds_test.reset_index(drop=True)
 ds_train = ds_train[['question', 'answer', 'image']]
 ds_val = ds_val[['question', 'answer', 'image']]
 ds_test = ds_test[['question', 'answer', 'image']]
+
+print(f"Number of records in training dataset: {len(ds_train)}")
+print(f"Number of records in validation dataset: {len(ds_val)}")
+print(f"Number of records in test dataset: {len(ds_test)}")
