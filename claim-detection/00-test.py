@@ -129,6 +129,56 @@ if len(df) > 0:
     print(val_df.iloc[0][["filename", "base64_uri"]])
     print("\nSample test row with new columns:")
     print(test_df.iloc[0][["filename", "base64_uri"]])
+    
+    # --- Prepare JSONL datasets for fine-tuning ---
+    SYSTEM_PROMPT = """
+    You are an assistant that decides whether a bottle can be returned for a deposit refund.
+    Look at the image and answer with exactly one word: "claimable" or "non-claimable".
+    """
+
+    def row_to_chat_json(row: pd.Series) -> dict:
+        """
+        Map one DataFrame row to the 3-turn chat format:
+          system  - your fixed instructions
+          user    - ALWAYS the same question + the image
+          assistant - ground-truth (claimable / non-claimable)
+        """
+        return {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": SYSTEM_PROMPT.strip()
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "Is the bottle claimable?"},
+                        {"type": "image_url", "image_url": {"url": row["base64_uri"]}}
+                    ]
+                },
+                {
+                    "role": "assistant",
+                    "content": [{"type": "text", "text": row["label"]}]
+                }
+            ]
+        }
+
+    def df_to_jsonl(df: pd.DataFrame, out_path: Path):
+        with out_path.open("w", encoding="utf-8") as f:
+            for _, row in df.iterrows():
+                json_line = row_to_chat_json(row)
+                f.write(json.dumps(json_line, ensure_ascii=False) + "\n")
+        print(f"Wrote {len(df):>4} lines  →  {out_path}")
+
+    # Create directory for JSONL data files
+    data_dir = script_dir / "claim-detection/data_jsonl"
+    data_dir.mkdir(exist_ok=True)
+
+    # Create JSONL files for each split
+    df_to_jsonl(train_df, data_dir / "train.jsonl")
+    df_to_jsonl(val_df, data_dir / "val.jsonl")
+    df_to_jsonl(test_df, data_dir / "test.jsonl")  # keep only locally
+    
 else:
     print("No images found. Check the directory path and structure.")
     print(f"Looking for images in: {img_dir}")
