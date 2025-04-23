@@ -91,4 +91,4 @@ coverage.xml
 *.jsonl
 blurred_files/
 
-claim-images/
+claim-detection/claim-images/
