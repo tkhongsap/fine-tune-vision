@@ -34,13 +34,18 @@ def build_df(img_dir: Path):
 script_dir = Path.cwd()  # Use current working directory in notebooks
 
 # Set path to the claim-images directory
-img_dir = script_dir / "claim-detection/claim-images"  # Use the correct path to claim-images folder
+img_dir = script_dir / "claim-detection/claim-images"  # Fix the path to claim-images folder
 
 print(f"Looking for images in: {img_dir}")
 df = build_df(img_dir)
 
 # Analyze the dataset and print results
 analyze_image_dataset(df, script_dir, img_dir)
+
+
+# Limit the dataset to x images for perfomrance and add seed value for reproducibility
+sample_size = 30    
+seed_value = 142 
 
 # Debug print to see if we're getting data
 print(f"Found {len(df)} images")
@@ -51,9 +56,30 @@ if len(df) > 0:
     # Print label distribution using the utility function
     print_label_distribution(df)
 
+    # Limit to only 30 images, but maintain class balance
+    if len(df) > sample_size:
+        # Stratified sampling to maintain label distribution
+        df = df.groupby("label", group_keys=False).apply(
+            lambda x: x.sample(min(len(x), int(sample_size * len(x) / len(df))), random_state=seed_value)
+        )
+        # If we don't have exactly 30 due to rounding, adjust
+        if len(df) > sample_size:
+            df = df.sample(sample_size, random_state=seed_value)
+        elif len(df) < sample_size:
+            # This is unlikely but just in case
+            remaining = sample_size - len(df)
+            excluded = pd.concat([df, df]).drop_duplicates(keep=False)
+            if len(excluded) >= remaining:
+                df = pd.concat([df, excluded.sample(remaining, random_state=seed_value)])
+        
+        print(f"\nLimited to {sample_size} images")
+        
+        # Print updated label distribution
+        print_label_distribution(df, "Limited dataset")
+
     # 70 / 20 / 10 split – but ALWAYS stratified by label
-    train_df, tmp_df = train_test_split(df, test_size=0.30, stratify=df["label"], random_state=42)
-    val_df, test_df  = train_test_split(tmp_df, test_size=1/3, stratify=tmp_df["label"], random_state=42)
+    train_df, tmp_df = train_test_split(df, test_size=0.30, stratify=df["label"], random_state=seed_value)
+    val_df, test_df  = train_test_split(tmp_df, test_size=1/3, stratify=tmp_df["label"], random_state=seed_value)
 
     print(f"\nData split statistics:")
     print(f"train: {len(train_df)} images ({len(train_df)/len(df)*100:.1f}%)")
