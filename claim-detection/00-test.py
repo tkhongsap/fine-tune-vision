@@ -56,13 +56,13 @@ if len(df) > 0:
     # Print label distribution using the utility function
     print_label_distribution(df)
 
-    # Limit to only 30 images, but maintain class balance
+    # Limit to only sample_size images, but maintain class balance
     if len(df) > sample_size:
         # Stratified sampling to maintain label distribution
         df = df.groupby("label", group_keys=False).apply(
             lambda x: x.sample(min(len(x), int(sample_size * len(x) / len(df))), random_state=seed_value)
         )
-        # If we don't have exactly 30 due to rounding, adjust
+        # If we don't have exactly sample_size due to rounding, adjust
         if len(df) > sample_size:
             df = df.sample(sample_size, random_state=seed_value)
         elif len(df) < sample_size:
